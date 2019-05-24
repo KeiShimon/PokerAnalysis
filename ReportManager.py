@@ -12,7 +12,7 @@ def main(*argv):
         INITIALPOT = int(argv[1])
     except:
         INITIALPOT = 100
-    
+
     df = pd.read_csv(PATH,header=3)
 
     # change column name
@@ -31,7 +31,7 @@ def main(*argv):
 
         elif 'CHECK' in colname:
             changeColName[colname] = 'Check'
-        
+
         elif 'Global' not in colname:
             changeColName[colname] = colname.replace(' ', '_').replace('EQR','EqR').replace('Equity','Eq')
 
@@ -66,13 +66,13 @@ def main(*argv):
 
             if t == m:
                 if t != b:
-                    tone.append(2)
+                    tone.append(2) # twotone
                 else:
-                    tone.append(1)
+                    tone.append(3) # monotone
             elif t == b or m == b:
-                tone.append(2)
+                tone.append(2) # twotone
             else:
-                tone.append(3)
+                tone.append(1) # rainbow
 
         else:
             top.append(0)

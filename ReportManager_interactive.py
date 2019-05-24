@@ -66,8 +66,7 @@ df.head()
 
 
 #%%
-'''
-Run this cell to insert columns.
+'''Run this block to insert columns.
 
 Columns inserted:
     tone, pair, btm, mid, top (in this order)
@@ -103,15 +102,15 @@ for flop in flops:
 
         if t == m:
             if t != b:
-                tone.append(2)
+                tone.append(2) # twotone
             else:
-                tone.append(1)
+                tone.append(3) # monotone
         elif t == b or m == b:
-            tone.append(2)
+            tone.append(2) # twotone
         else:
-            tone.append(3)
+            tone.append(1) # rainbow
 
-    else:
+    else: # average row
         top.append(0)
         mid.append(0)
         btm.append(0)
@@ -134,15 +133,9 @@ print('--------------df.head()--------------')
 df.head()
 
 #%%
-'''
-Run this cell to save current DataFrame
+'''Run this block to save current DataFrame
 '''
 new_path = PATH[0:PATH.find('.csv')] + '_mod.csv'
 df.to_csv(new_path, index=None)
 
 print('Saved df to', new_path)
-
-#%%
-
-
-#%%
