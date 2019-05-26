@@ -88,7 +88,9 @@ def main(*argv):
     df.insert(2,'mid',mid)
     df.insert(2,'top',top)
 
-    df.to_csv(PATH,index=None)
+    new_path = PATH[0:PATH.find('.csv')] + '_mod.csv'
+
+    df.to_csv(new_path,index=None)
 
     sys.exit()
 
