@@ -5,23 +5,20 @@ import sys
 from pandas import Series, DataFrame
 
 #%%
-'''
-Set defaul parameters below and run this block.
+'''Set defaul parameters below and run this block.
 '''
 PATH = r"Reports\SRP_BTNvsBB_CB_All_All\report.csv"
 INITIALPOT = 100 # default is 100
 
 #%%
-'''
-Run this block to initialize a DataFrame.
+'''Run this block to initialize a DataFrame.
 '''
 df = pd.read_csv(PATH,header=3)
 print('loaded Dataframe, size: ', df.size)
 df.head(10)
 
 #%%
-'''
-Run this block to delete unnecessary columns and change names.
+'''Run this block to delete unnecessary columns and change names.
 '''
 
 change_column_name = {'Global %':'Occurence'}
@@ -70,6 +67,7 @@ df.head()
 
 Columns inserted:
     tone, pair, btm, mid, top (in this order)
+    bet (before check)
 
 Columns are inserted right next to Global.
 
@@ -126,8 +124,43 @@ df.insert(2,'top',top)
 
 del tone, pair, btm, mid, top, flops, flop, t, m, b
 
-print('Columns inserted: top, mid, btm, pair, tone')
+df.insert(df.columns.get_loc('Check'), 'Bet', [100-x for x in df['Check']])
 
+print('Columns inserted: top, mid, btm, pair, tone, Bet')
+
+print('\n')
+print('--------------df.head()--------------')
+df.head()
+
+#%%
+'''Run this block to insert a column that tells if the flop involves overpot-bet strategy.
+
+Definition of overpot situations:
+    - absolute overpot frequency < 10%
+    - relative overpot frequency occupation among available bet sizes > 20%
+'''
+
+THRESHOLD_ABS = 10
+THRESHOLD_RELATIVE = 20
+OVERBET = 'Bet75.0'
+
+b, f = [], []
+
+for overpot, bet in df.loc[:,[OVERBET, 'Bet']].itertuples(index=False):
+    relative = 100 * overpot / bet
+    f.append(relative)
+
+    if overpot >= THRESHOLD_ABS and relative >= THRESHOLD_RELATIVE:
+        b.append(True)
+    else:
+        b.append(False)
+
+df['overpot'] = b
+df['overpot_freq'] = f
+
+del b, f
+
+print('Columns inserted: overbet, overbet_freq')
 print('\n')
 print('--------------df.head()--------------')
 df.head()
