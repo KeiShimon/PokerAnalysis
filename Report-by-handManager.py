@@ -1,21 +1,24 @@
 #%%
-import numpy as np
 import pandas as pd
-import sys
-from pandas import Series, DataFrame
+import numpy as np
+
 from decimal import Decimal, ROUND_HALF_UP
+from pandas import DataFrame, Series
 
 #%%
 '''Set defaul parameters below and run this block.
 '''
-PATH = 'initialize path before run!'
-INITIALPOT =  'initialize initial pot size before run!' # default is 100
+
+PATH = r'PokerAnalysis\Reports\SRP_BTNvsBB_CB_All_All\report_IP_Full.csv'
+INITIALPOT = 50
 
 #%%
 '''Run this block to initialize a DataFrame.
 '''
-df = pd.read_csv(PATH,header=3)
-print('loaded Dataframe, size: ', df.size)
+df = pd.read_csv(PATH)
+print('Loaded Dataframe from:', PATH)
+print('     size:', df.size)
+print('     length:', len(df))
 df.head(10)
 
 #%%
@@ -27,30 +30,28 @@ deleted_columns = []
 
 for c in df.columns:
     colname = c.lower()
-    colname.replace(' ', '_')
+    colname = colname.replace(' ', '_')
 
     if 'ev' in colname:
-        deleted_columns.append(colname)
-        del df[colname]
+        deleted_columns.append(c)
+        del df[c]
 
     else:
         if 'bet' in colname or 'raise' in colname:
             i = colname.find('%')
             betsize = str(int(colname[4:i]) * 100 / INITIALPOT)
-            action = 'bet' if 'bet' in colname else 'raise'
+            action = 'raise' if ( 'raise' in colname ) else 'bet'
             colname = action + betsize
 
         elif 'check' in colname:
             colname = 'check'
 
-        elif 'global' in colname:
-            colname = 'global'
-
         change_column_name[c] = colname
+
 
 df = df.rename(columns=change_column_name)
 
-print('The names of these columns have been changed using dictionary below:')
+print('Column names have been changed as below:')
 for k in change_column_name:
     print('  ', k, '->', change_column_name[k])
 
@@ -58,12 +59,11 @@ print('\nThese columns have been deleted:')
 for k in deleted_columns:
     print('  ', k)
 
-del change_column_name, deleted_columns, action, betsize, colname, c, k
+del change_column_name, deleted_columns, action, betsize, colname, k, c
 
 print('\n')
 print('--------------df.head()--------------')
 df.head()
-
 
 #%%
 '''Run this block to insert columns.
@@ -72,10 +72,10 @@ Columns inserted:
     tone, pair, btm, mid, top (in this order)
     bet (before check)
 
-Columns are inserted right next to Global.
+Columns are inserted right next to 'flop'.
 
 '''
-flops = Series(df['flop'])
+flops = df['flop']
 rankToInt = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14}
 top,mid,btm = [], [], []
 tone,pair = [], []
@@ -118,13 +118,13 @@ for flop in flops:
         pair.append(0)
         tone.append(0)
 
-insert_id = df.columns.get_loc('global') + 1
+insert_col = df.columns.get_loc('weight_ip') + 1
 
-df.insert(insert_id,'tone',tone)
-df.insert(insert_id,'pair',pair)
-df.insert(insert_id,'btm',btm)
-df.insert(insert_id,'mid',mid)
-df.insert(insert_id,'top',top)
+df.insert(insert_col,'tone',tone)
+df.insert(insert_col,'pair',pair)
+df.insert(insert_col,'btm',btm)
+df.insert(insert_col,'mid',mid)
+df.insert(insert_col,'top',top)
 
 del tone, pair, btm, mid, top, flops, flop, t, m, b
 
@@ -137,16 +137,48 @@ print('--------------df.head()--------------')
 df.head()
 
 #%%
-'''Run this block to insert a column that tells if the flop involves potover-bet strategy.
+'''Run this cell to add a row that tells if the board involves over-pot-CB strategy.
+TRUE/FALSE will be copied from board-wise report.
+'''
+PATH_board_wise_report = r'PokerAnalysis\Reports\SRP_BTNvsBB_CB_All_All\report_mod.csv'
 
-Definition of potover situations:
-    - absolute potover frequency < 10%
-    - relative potover frequency occupation among available bet sizes > 20%
+df_board_wise = pd.read_csv(PATH_board_wise_report)
+df_board_wise.head()
+
+i = 0
+current_flop = df_board_wise.loc[i]['flop']
+last_flop = current_flop
+flags = []
+flag = df_board_wise.loc[i]['potover']
+
+for current_flop in df['flop']:
+
+    if current_flop == last_flop:
+        flags.append(flag)
+
+    else:
+        i += 1
+        flag = df_board_wise.loc[i]['potover']
+        flags.append(flag)
+
+    last_flop = current_flop
+
+df['potover_board'] = flags
+del flags, flag, df_board_wise, current_flop, last_flop
+print('Columns concatenated: "potover_board"')
+
+print('\n')
+print('--------------df.head()--------------')
+df.head()
+
+#%%
+'''Run this cell to concatenate columns that tells if the specific hand involves over-pot-CB strategy.
+Check default parameters before run.
 '''
 
 THRESHOLD_ABS = 10
 THRESHOLD_RELATIVE = 20
-POTOVER = 'bet75.0'
+POTOVER = 'bet150.0'
 
 b, f = [], []
 
@@ -159,20 +191,36 @@ for potover, bet in df.loc[:,[POTOVER, 'bet']].itertuples(index=False):
     else:
         b.append(False)
 
-df['potover'] = b
+df['potover_hand'] = b
 df['potover_freq'] = f
 
 del b, f, potover, bet
 
-print('Columns inserted: overbet, overbet_freq')
+print('Columns concatenated: "potover_hand", "potover_freq"')
+
 print('\n')
 print('--------------df.head()--------------')
 df.head()
 
 #%%
-'''Run this block to save current DataFrame
-'''
-new_path = PATH[0:PATH.find('.csv')] + '_mod.csv'
-df.to_csv(new_path, index=None)
+df.to_csv(PATH, index=None)
 
-print('Saved df to', new_path)
+#%%
+df.head()
+
+#%%
+'''Run this cell to concatenate:
+
+    straight
+    flush
+    set
+    twopair
+
+
+    flush_draw
+    straight_draw_eight
+    straight_draw_four
+    backdoor_flush_draw
+    backdoor_open_end
+
+'''
