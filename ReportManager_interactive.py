@@ -8,8 +8,8 @@ from decimal import Decimal
 #%%
 '''Set defaul parameters below and run this block.
 '''
-PATH = r"Reports\SRP_BTNvsBB_CB_All_All\report.csv"
-INITIALPOT = 100 # default is 100
+# PATH =
+# INITIALPOT =  # default is 100
 
 #%%
 '''Run this block to initialize a DataFrame.
@@ -22,35 +22,37 @@ df.head(10)
 '''Run this block to delete unnecessary columns and change names.
 '''
 
-change_column_name = {'Global %':'Occurence'}
+change_column_name = {}
 deleted_columns = []
 
-for colname in df.columns:
+for c in df.columns:
+    colname = c.lower()
+    colname.replace(' ', '_')
 
-    if 'EV' in colname:
+    if 'ev' in colname:
         deleted_columns.append(colname)
         del df[colname]
 
-    elif 'BET' in colname or 'RAISE' in colname:
-        i = colname.find('%')
-        betsize = str(int(colname[4:i]) * 100 / INITIALPOT)
-        action = 'Bet' if 'BET' in colname else 'Raise'
-        change_column_name[colname] = action + betsize
+    else:
+        if 'bet' in colname or 'raise' in colname:
+            i = colname.find('%')
+            betsize = str(int(colname[4:i]) * 100 / INITIALPOT)
+            action = 'bet' if 'bet' in colname else 'raise'
+            colname = action + betsize
 
-    elif 'CHECK' in colname:
-        change_column_name[colname] = 'Check'
+        elif 'check' in colname:
+            colname = 'check'
 
-    elif 'Global' not in colname:
-        change_column_name[colname] = colname.replace(' ', '_').replace('Equity','EQ')
+        elif 'global' in colname:
+            colname = 'global'
 
-    elif 'Global' in colname:
-        change_column_name[colname] = 'global'
+        change_column_name[c] = colname
 
 df = df.rename(columns=change_column_name)
 
 print('The names of these columns have been changed using dictionary below:')
 for k in change_column_name:
-    print('  ', k, ':', change_column_name[k])
+    print('  ', k, '->', change_column_name[k])
 
 print('\nThese columns have been deleted:')
 for k in deleted_columns:
@@ -73,7 +75,7 @@ Columns inserted:
 Columns are inserted right next to Global.
 
 '''
-flops = Series(df['Flop'])
+flops = Series(df['flop'])
 rankToInt = {'2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14}
 top,mid,btm = [], [], []
 tone,pair = [], []
@@ -116,18 +118,19 @@ for flop in flops:
         pair.append(0)
         tone.append(0)
 
+insert_id = df.columns.get_loc('global') + 1
 
-df.insert(2,'tone',tone)
-df.insert(2,'pair',pair)
-df.insert(2,'btm',btm)
-df.insert(2,'mid',mid)
-df.insert(2,'top',top)
+df.insert(insert_id,'tone',tone)
+df.insert(insert_id,'pair',pair)
+df.insert(insert_id,'btm',btm)
+df.insert(insert_id,'mid',mid)
+df.insert(insert_id,'top',top)
 
 del tone, pair, btm, mid, top, flops, flop, t, m, b
 
-df.insert(df.columns.get_loc('Check'), 'Bet', [100-x for x in df['Check']])
+df.insert(df.columns.get_loc('check'), 'bet', [100-x for x in df['check']])
 
-print('Columns inserted: top, mid, btm, pair, tone, Bet')
+print('Columns inserted: top, mid, btm, pair, tone, bet')
 
 print('\n')
 print('--------------df.head()--------------')
@@ -143,12 +146,12 @@ Definition of overpot situations:
 
 THRESHOLD_ABS = 10
 THRESHOLD_RELATIVE = 20
-OVERBET = 'Bet75.0'
+OVERBET = 'bet75.0'
 
 b, f = [], []
 
-for overpot, bet in df.loc[:,[OVERBET, 'Bet']].itertuples(index=False):
-    relative = 100 * float(Decimal(str(overpot / bet)).quantize(Decimal(0.001), rounding=ROUND_ROUND_HALF_UP))
+for overpot, bet in df.loc[:,[OVERBET, 'bet']].itertuples(index=False):
+    relative = 100 * float(Decimal(str(overpot / bet)).quantize(Decimal('0.001'), rounding=ROUND_HALF_UP))
     f.append(relative)
 
     if overpot >= THRESHOLD_ABS and relative >= THRESHOLD_RELATIVE:
