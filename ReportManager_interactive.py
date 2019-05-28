@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import sys
 from pandas import Series, DataFrame
+from decimal import Decimal
 
 #%%
 '''Set defaul parameters below and run this block.
@@ -147,7 +148,7 @@ OVERBET = 'Bet75.0'
 b, f = [], []
 
 for overpot, bet in df.loc[:,[OVERBET, 'Bet']].itertuples(index=False):
-    relative = 100 * overpot / bet
+    relative = 100 * float(Decimal(str(overpot / bet)).quantize(Decimal(0.001), rounding=ROUND_ROUND_HALF_UP))
     f.append(relative)
 
     if overpot >= THRESHOLD_ABS and relative >= THRESHOLD_RELATIVE:
