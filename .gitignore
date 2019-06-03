@@ -4,3 +4,8 @@
 
 # レポート
 Reports/
+
+# 動作確認用ファイル
+untitled*
+current.py
+test.py
